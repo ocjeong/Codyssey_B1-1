@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영화 티어리스트</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #ffffff;
+            --border-color: #333;
+            --s-tier: #ff7f7f;
+            --a-tier: #ffbf7f;
+            --b-tier: #ffff7f;
+            --c-tier: #7fff7f;
+            --f-tier: #7fbfff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 30px; }
+
+        /* 티어 표 스타일 */
+        #tier-board {
+            width: 100%;
+            max-width: 900px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+
+        .tier-row {
+            display: flex;
+            min-height: 100px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tier-row:last-child { border-bottom: none; }
+
+        .tier-label {
+            width: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000;
+            flex-shrink: 0;
+        }
+
+        .tier-content {
+            flex-grow: 1;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 10px;
+            gap: 10px;
+            background-color: #1a1a1a;
+        }
+
+        /* 티어별 색상 */
+        .s-label { background-color: var(--s-tier); }
+        .a-label { background-color: var(--a-tier); }
+        .b-label { background-color: var(--b-tier); }
+        .c-label { background-color: var(--c-tier); }
+        .f-label { background-color: var(--f-tier); }
+
+        /* 미배치 목록 */
+        #unassigned-section {
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+
+        #unassigned-list {
+            min-height: 120px;
+            border: 2px dashed var(--border-color);
+            display: flex;
+            flex-wrap: wrap;
+            padding: 15px;
+            gap: 10px;
+            border-radius: 8px;
+        }
+
+        /* 영화 카드 스타일 */
+        .movie-card {
+            width: 140px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            cursor: grab;
+            position: relative;
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .movie-card:active { cursor: grabbing; }
+        .movie-card:hover { transform: scale(1.02); }
+
+        .movie-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            word-break: keep-all;
+        }
+
+        .movie-info {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .movie-card:hover .delete-btn { display: block; }
+
+        /* 영화 추가 폼 */
+        #add-movie-form {
+            width: 100%;
+            max-width: 900px;
+            background: #252525;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #add-movie-form input {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: #121212;
+            color: white;
+        }
+
+        #add-movie-form button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #add-movie-form button:hover { background-color: #45a049; }
+
+        .drag-over { background-color: #333 !important; }
+    </style>
+</head>
+<body>
+
+    <h1>🎬 영화 티어리스트</h1>
+
+    <div id="tier-board">
+        <div class="tier-row" data-tier="S">
+            <div class="tier-label s-label">S</div>
+            <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="tier-row" data-tier="A">
+            <div class="tier-label a-label">A</div>
+            <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="tier-row" data-tier="B">
+            <div class="tier-label b-label">B</div>
+            <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="tier-row" data-tier="C">
+            <div class="tier-label c-label">C</div>
+            <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="tier-row" data-tier="F">
+            <div class="tier-label f-label">F</div>
+            <div class="tier-content" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+    </div>
+
+    <div id="unassigned-section">
+        <h3>📦 미배치 영화 목록</h3>
+        <div id="unassigned-list" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+    </div>
+
+    <div id="add-movie-form">
+        <input type="text" id="new-title" placeholder="영화 제목" required>
+        <input type="text" id="new-year" placeholder="개봉 연도 (예: 2024)">
+        <input type="text" id="new-director" placeholder="감독 이름">
+        <button onclick="addNewMovie()">영화 추가</button>
+    </div>
+
+    <script>
+        // 초기 데이터 (결정되지 않았던 8편)
+        const initialMovies = [
+            { id: 'm1', title: '기생충', year: '2019', director: '봉준호', tier: 'none' },
+            { id: 'm2', title: '인셉션', year: '2010', director: '크리스토퍼 놀란', tier: 'none' },
+            { id: 'm3', title: '다크 나이트', year: '2008', director: '크리스토퍼 놀란', tier: 'none' },
+            { id: 'm4', title: '인터스텔라', year: '2014', director: '크리스토퍼 놀란', tier: 'none' },
+            { id: 'm5', title: '어바웃 타임', year: '2013', director: '리차드 커티스', tier: 'none' },
+            { id: 'm6', title: '올드보이', year: '2003', director: '박찬욱', tier: 'none' },
+            { id: 'm7', title: '너의 이름은.', year: '2016', director: '신카이 마코토', tier: 'none' },
+            { id: 'm8', title: '매트릭스', year: '1999', director: '워쇼스키 자매', tier: 'none' }
+        ];
+
+        let movies = [];
+
+        // 로컬 스토리지에서 데이터 불러오기
+        function loadData() {
+            const savedMovies = localStorage.getItem('movie-tier-data');
+            if (savedMovies) {
+                movies = JSON.parse(savedMovies);
+            } else {
+                movies = initialMovies;
+            }
+            render();
+        }
+
+        // 데이터 저장
+        function saveData() {
+            localStorage.setItem('movie-tier-data', JSON.stringify(movies));
+        }
+
+        // 화면 그리기
+        function render() {
+            // 모든 컨테이너 비우기
+            document.querySelectorAll('.tier-content, #unassigned-list').forEach(el => el.innerHTML = '');
+
+            movies.forEach(movie => {
+                const card = document.createElement('div');
+                card.className = 'movie-card';
+                card.draggable = true;
+                card.id = movie.id;
+                card.ondragstart = drag;
+                
+                card.innerHTML = `
+                    <button class="delete-btn" onclick="deleteMovie('${movie.id}')">×</button>
+                    <div class="movie-title">${movie.title}</div>
+                    <div class="movie-info">${movie.year} | ${movie.director}</div>
+                `;
+
+                if (movie.tier === 'none') {
+                    document.getElementById('unassigned-list').appendChild(card);
+                } else {
+                    const tierRow = document.querySelector(`.tier-row[data-tier="${movie.tier}"] .tier-content`);
+                    if (tierRow) tierRow.appendChild(card);
+                }
+            });
+        }
+
+        // 드래그 앤 드롭 로직
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(ev) {
+            ev.currentTarget.classList.remove('drag-over');
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('drag-over');
+            const data = ev.dataTransfer.getData("text");
+            const targetTier = ev.currentTarget.parentElement.dataset.tier || 'none';
+            
+            // 데이터 업데이트
+            const movieIndex = movies.findIndex(m => m.id === data);
+            if (movieIndex !== -1) {
+                movies[movieIndex].tier = targetTier;
+                saveData();
+                render();
+            }
+        }
+
+        // 영화 추가
+        function addNewMovie() {
+            const title = document.getElementById('new-title').value;
+            const year = document.getElementById('new-year').value || '미정';
+            const director = document.getElementById('new-director').value || '미정';
+
+            if (!title) {
+                alert('영화 제목을 입력해주세요!');
+                return;
+            }
+
+            const newMovie = {
+                id: 'm' + Date.now(),
+                title: title,
+                year: year,
+                director: director,
+                tier: 'none'
+            };
+
+            movies.push(newMovie);
+            saveData();
+            render();
+
+            // 입력창 초기화
+            document.getElementById('new-title').value = '';
+            document.getElementById('new-year').value = '';
+            document.getElementById('new-director').value = '';
+        }
+
+        // 영화 삭제
+        function deleteMovie(id) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                movies = movies.filter(m => m.id !== id);
+                saveData();
+                render();
+            }
+        }
+
+        // 초기 로드
+        loadData();
+    </script>
+</body>
+</html>
